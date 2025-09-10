@@ -1,0 +1,84 @@
+-- Blade Ball Edition v2
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local mouse = player:GetMouse()
+
+local ScreenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Position = UDim2.new(0,50,0,50)
+Frame.Size = UDim2.new(0,200,0,300)
+Frame.BackgroundColor3 = Color3.fromRGB(50,50,50)
+
+local function createButton(name, callback, posY)
+    local btn = Instance.new("TextButton", Frame)
+    btn.Size = UDim2.new(0,180,0,40)
+    btn.Position = UDim2.new(0,10,0,posY)
+    btn.Text = name
+    btn.BackgroundColor3 = Color3.fromRGB(0,0,255)
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    btn.MouseButton1Click:Connect(callback)
+end
+
+
+-- Blade
+local blade = Instance.new("Part")
+blade.Size = Vector3.new(1,5,1)
+blade.Color = Color3.fromRGB(0,0,255)
+blade.Anchored = false
+blade.CanCollide = false
+blade.Parent = workspace
+
+local weld = Instance.new("WeldConstraint")
+weld.Part0 = character:WaitForChild("RightHand")
+weld.Part1 = blade
+weld.Parent = blade
+
+
+-- Auto Parry
+local autoParry = false
+local parryAccuracy = 100 -- 0 to 100
+
+
+createButton("Toggle Auto Parry", function()
+    autoParry = not autoParry
+end, 10)
+
+
+createButton("Boost FPS / Fix Lag", function()
+    for _,v in pairs(game:GetService("Workspace"):GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.Material = Enum.Material.SmoothPlastic
+            v.Reflectance = 0
+        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Fire") or v:IsA("Smoke") then
+            v:Destroy()
+        end
+    end
+end, 60)
+
+
+createButton("Anti-Kick / Anti-Ban", function()
+    local mt = getrawmetatable(game)
+    setreadonly(mt,false)
+    local old = mt.__namecall
+    mt.__namecall = newcclosure(function(self,...)
+        local method = getnamecallmethod()
+        if method == "Kick" or method == "Destroy" then
+            return
+        end
+        return old(self,...)
+    end)
+    setreadonly(mt,true)
+end, 110)
+
+
+game:GetService("RunService").Stepped:Connect(function()
+    if autoParry then
+        for _,v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Part") and v.Name == "Blade" and v.Parent ~= character then
+                if math.random(0,100) <= parryAccuracy then
+                    blade.CFrame = v.CFrame
+                end
+            end
+        end
+    end
+end)
